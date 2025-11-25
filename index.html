@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Happy Birthday! 🎂</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%}
+    body{
+      font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+      color:#111; overflow:hidden; display:flex;align-items:center;justify-content:center;
+      background: linear-gradient(135deg,#fce7f3 0%, #f7e9ff 50%, #e9f7ff 100%);
+      -webkit-font-smoothing:antialiased; height:100vh;
+    }
+
+    /* Password gate */
+    #entryGate{position:fixed; inset:0; display:grid; place-items:center; z-index:120;
+      background:linear-gradient(180deg,rgba(255,255,255,0.95),rgba(255,255,255,0.98)); padding:20px;}
+    .gateCard{width:min(520px,92vw); background:white; border-radius:14px; padding:28px; text-align:center;
+      box-shadow:0 12px 40px rgba(0,0,0,0.08);}
+    .lockIcon{font-size:34px; margin-bottom:10px}
+    .gateTitle{font-size:20px;color:#5b1b63;font-weight:700;margin-bottom:8px}
+    .pwdInput{width:80%; padding:10px 12px; border-radius:10px; border:1px solid #eee; font-size:16px; text-align:center}
+    .pwdBtn{margin-top:12px;padding:10px 14px;border-radius:10px;border:none;cursor:pointer;background:#6b1b69;color:white;font-weight:700}
+    .pwdError{color:#c92b3a;margin-top:10px;display:none}
+
+    /* Countdown screen */
+    #countdownScreen{position:fixed; inset:0; display:none; place-items:center; z-index:80; background: linear-gradient(180deg,#fff8fb,#fff); padding:24px}
+    .countdownBox{ text-align:center; max-width:720px; width:92vw; border-radius:14px; padding:28px; background:rgba(255,255,255,0.95); box-shadow:0 10px 40px rgba(0,0,0,0.08); }
+    .countdownTitle{font-size:22px; color:#5b1b63; font-weight:700; margin-bottom:18px}
+    .countdownLarge{font-size:46px; font-weight:800; color:#6b1b69; margin-bottom:10px}
+    .countContainer{display:flex; gap:14px; justify-content:center; margin-top:8px}
+    .countUnit{background:rgba(107,27,105,0.06); padding:16px 18px; border-radius:12px; min-width:88px; text-align:center}
+    .countUnit .num{font-size:28px; font-weight:800; color:#6b1b69}
+    .countUnit .label{font-size:12px; color:#6b1b69cc; margin-top:6px}
+
+    /* Main card */
+    .card{ width:min(980px,94vw); height:min(640px,86vh); background: rgba(255,255,255,0.65);
+      backdrop-filter: blur(8px) saturate(120%); border-radius:18px; box-shadow:0 12px 40px rgba(0,0,0,0.12);
+      padding:28px; position:relative; overflow:hidden; display:flex; gap:20px; align-items:stretch; z-index:20; display:none;
+    }
+    .left{ flex:1.2; padding:20px; display:flex; flex-direction:column; justify-content:center; gap:18px; }
+    .title{ font-size:32px; font-weight:700; letter-spacing:0.2px; color:#6b1b69; }
+    .subtitle{ color:#6b1b69cc; font-size:14px }
+    .age-badge{ display:inline-block; padding:8px 14px; background:linear-gradient(90deg,#ffd8ec,#ffd0f5); border-radius:999px; font-weight:700; color:#6b1b69; margin-top:6px; }
+    .message{ margin-top:12px; font-size:16px; line-height:1.45; color:#2a1a2b; max-width:560px; }
+    .reveal{ margin-top:16px; display:flex; gap:12px; align-items:center; }
+    .heart-btn{ width:72px; height:72px; border-radius:50%; background:linear-gradient(180deg,#ffb3d6,#ff6fb1); display:grid; place-items:center; cursor:pointer; box-shadow:0 8px 20px rgba(255,107,163,0.18); transform:scale(1); transition:transform .18s ease; }
+    .heart{font-size:28px; transition: transform 0.3s ease;}
+    .heart.bounce{ animation: bounce 0.6s ease; }
+    @keyframes bounce{ 0%,100%{transform:scale(1)} 50%{transform:scale(1.3)} }
+    .reveal-text{font-size:15px; color:#3b2350}
+    .right{ flex:.9; padding:18px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; }
+    .photo-frame{ width:240px; height:240px; border-radius:16px; overflow:hidden; box-shadow:0 12px 26px rgba(107,27,105,0.08); background:linear-gradient(180deg,#fff,#fff0); }
+    .photo-frame img{ width:100%; height:100%; object-fit:cover }
+    .btn{ padding:8px 12px; border-radius:12px; border:none; cursor:pointer; font-weight:700 }
+    .btn-wish{ background:linear-gradient(90deg,#bde7ff,#9ad9ff); color:#06324a }
+
+    .modal{ position:fixed; inset:0; display:grid; place-items:center; background:rgba(6,6,9,0.45); z-index:60; opacity:0; pointer-events:none; transition:opacity .18s }
+    .modal.open{ opacity:1; pointer-events:auto }
+    .modal-card{ background:white; border-radius:14px; padding:22px; width:min(720px,92vw); box-shadow:0 18px 60px rgba(6,6,9,0.28) }
+    .modal-card h2{ color:#5b1b63 }
+    .close-x{ position:absolute; right:18px; top:14px; cursor:pointer; font-weight:700 }
+    .footer{ position:absolute; left:20px; bottom:18px; font-size:12px; color:#6b1b6990 }
+    .autoplay-prompt{ position:fixed; left:50%; top:16px; transform:translateX(-50%); background:rgba(255,255,255,0.95); padding:10px 14px; border-radius:999px; box-shadow:0 8px 30px rgba(0,0,0,0.12); display:none; z-index:90 }
+    .autoplay-prompt.show{ display:block }
+    @media (max-width:820px){.card{ flex-direction:column; height:auto; padding:18px } .right{ order:-1 } .photo-frame{ width:84%; height:260px } .pwdInput{ width:92% }}
+  </style>
+</head>
+<body>
+  <!-- Password gate -->
+  <div id="entryGate">
+    <div class="gateCard">
+      <div class="lockIcon">🔒</div>
+      <div class="gateTitle">Private — Enter Password</div>
+      <input id="pwd" class="pwdInput" type="password" inputmode="numeric" placeholder="Enter password" />
+      <div><button id="pwdBtn" class="pwdBtn">Open</button></div>
+      <div id="pwdError" class="pwdError">Incorrect password. Try again.</div>
+    </div>
+  </div>
+
+  <!-- Countdown screen -->
+  <div id="countdownScreen">
+    <div class="countdownBox">
+      <div class="countdownTitle">Countdown to Your Day</div>
+      <div class="countdownLarge">26 November 2025</div>
+      <div class="countContainer">
+        <div class="countUnit"><div class="num" id="cd_days">0</div><div class="label">Days</div></div>
+        <div class="countUnit"><div class="num" id="cd_hours">0</div><div class="label">Hours</div></div>
+        <div class="countUnit"><div class="num" id="cd_minutes">0</div><div class="label">Minutes</div></div>
+        <div class="countUnit"><div class="num" id="cd_seconds">0</div><div class="label">Seconds</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main birthday card -->
+  <div class="card" id="mainCard">
+    <section class="left">
+      <div><div class="title">Happy Birthday, <span style="color:#2a1650">Shuhaib ❤️</span> ✨</div>
+      <div class="subtitle">Even though we’ve only seen each other once in person… you’ve already become such a special part of my heart. Today is all about celebrating you. ❤️</div>
+      <div class="age-badge">Turning 26</div></div>
+      <p class="message" id="sweetMessage">From our very first meet to every call we shared… you’ve made my heart feel seen and safe. I may not have been by your side always, but my prayers and love have always been with you. 💗</p>
+      <div class="reveal">
+        <div class="heart-btn" id="revealBtn"><span class="heart">❤️</span></div>
+        <div class="reveal-text" id="revealHint">Tap the heart to reveal my secret message ✨</div>
+      </div>
+      <div style="margin-top:10px; display:flex; gap:10px; align-items:center">
+        <button class="btn btn-wish" id="finalWish">Show final wish</button>
+      </div>
+    </section>
+    <aside class="right">
+      <div class="photo-frame"><img src="HZEG4158.JPG" alt="Shuhaib photo placeholder"></div>
+      <div style="text-align:center; font-size:14px; color:#3b2350cc">Made with love ❤️</div>
+    </aside>
+    <div class="footer">26 November 2025 — Celebrate 26 years of him ✨</div>
+  </div>
+
+  <div class="modal" id="wishModal">
+    <div class="modal-card">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <h2>Happy 26th Birthday! 🎉</h2>
+        <div class="close-x" id="closeModal">✕</div>
+      </div>
+      <p>Shuhaib… even though our journey has just begun, it already feels so beautiful. I pray this year brings you strength, blessings, and everything your heart wishes for. Soon, we’ll celebrate every birthday side by side. Happy 26th Birthday, my soon-to-be forever. ❤️</p>
+      <div style="margin-top:14px; text-align:right"><button class="btn btn-wish" id="modalFire">Celebrate 🎆</button></div>
+    </div>
+  </div>
+
+  <canvas id="confettiCanvas" style="position:fixed; inset:0; pointer-events:none; z-index:30; display:none"></canvas>
+  <audio id="bgAudio" src="happy-birthday-to-you-piano-version-13976.mp3" loop preload="auto"></audio>
+  <div class="autoplay-prompt" id="autoplayPrompt">Tap to allow music → <button id="grantAudio">Allow</button></div>
+
+<script>
+const CORRECT_PWD = '143';
+// Dubai timezone: UTC+4
+const BIRTHDAY = new Date(Date.UTC(2025, 10, 25, 20, 0, 0));
+const entryGate = document.getElementById('entryGate');
+const pwdInput = document.getElementById('pwd');
+const pwdBtn = document.getElementById('pwdBtn');
+const pwdError = document.getElementById('pwdError');
+const countdownScreen = document.getElementById('countdownScreen');
+const cdDays = document.getElementById('cd_days');
+const cdHours = document.getElementById('cd_hours');
+const cdMins = document.getElementById('cd_minutes');
+const cdSecs = document.getElementById('cd_seconds');
+const mainCard = document.getElementById('mainCard');
+const audio = document.getElementById('bgAudio');
+const autoplayPrompt = document.getElementById('autoplayPrompt');
+const revealBtn = document.getElementById('revealBtn');
+const revealHint = document.getElementById('revealHint');
+const finalWish = document.getElementById('finalWish');
+const wishModal = document.getElementById('wishModal');
+const closeModal = document.getElementById('closeModal');
+const grantAudio = document.getElementById('grantAudio');
+const modalFire = document.getElementById('modalFire');
+const confettiCanvas = document.getElementById('confettiCanvas');
+let cdInterval=null, mainShown=false;
+
+// --------- Confetti setup ----------
+confettiCanvas.width = window.innerWidth;
+confettiCanvas.height = window.innerHeight;
+const ctx = confettiCanvas.getContext('2d');
+let confettiParticles = [];
+function random(min,max){return Math.random()*(max-min)+min;}
+class Confetti{
+  constructor(){
+    this.x = random(0,confettiCanvas.width);
+    this.y = random(0,confettiCanvas.height);
+    this.r = random(5,12);
+    this.color = `hsl(${Math.floor(random(0,360))},70%,60%)`;
+    this.d = random(2,5);
+    this.tilt = random(-10,10);
+  }
+  draw(){
+    ctx.beginPath();
+    ctx.moveTo(this.x+this.tilt,this.y);
+    ctx.lineTo(this.x+this.tilt+this.r/2,this.y+this.r);
+    ctx.lineTo(this.x+this.tilt-this.r/2,this.y+this.r);
+    ctx.fillStyle=this.color;
+    ctx.fill();
+  }
+  update(){
+    this.y += this.d;
+    this.tilt = Math.sin(this.y/10)*10;
+    if(this.y>confettiCanvas.height){this.y=-10; this.x=random(0,confettiCanvas.width);}
+  }
+}
+function createConfetti(count=100){
+  confettiParticles = [];
+  for(let i=0;i<count;i++) confettiParticles.push(new Confetti());
+}
+function renderConfetti(){
+  ctx.clearRect(0,0,confettiCanvas.width,confettiCanvas.height);
+  confettiParticles.forEach(p=>{p.update(); p.draw();});
+  requestAnimationFrame(renderConfetti);
+}
+function startConfetti(){
+  confettiCanvas.style.display='block';
+  createConfetti(150);
+  renderConfetti();
+}
+function burstConfetti(){
+  createConfetti(200);
+  renderConfetti();
+}
+
+// --------- Countdown & Main page logic ----------
+function isBirthdayOrAfter(){
+  const today=new Date();
+  return today.getFullYear()>BIRTHDAY.getFullYear() ||
+  (today.getFullYear()===BIRTHDAY.getFullYear() && today.getMonth()===BIRTHDAY.getMonth() && today.getDate()===BIRTHDAY.getDate());
+}
+function updateCountdown(){
+  const diff=BIRTHDAY-new Date();
+  if(diff<=0 || isBirthdayOrAfter()){ cdDays.textContent='0'; cdHours.textContent='0'; cdMins.textContent='0'; cdSecs.textContent='0'; showMainPage(); return; }
+  cdDays.textContent=Math.floor(diff/86400000);
+  cdHours.textContent=Math.floor((diff/3600000)%24);
+  cdMins.textContent=Math.floor((diff/60000)%60);
+  cdSecs.textContent=Math.floor((diff/1000)%60);
+}
+function showCountdown(){ 
+  countdownScreen.style.display='grid'; 
+  mainCard.style.display='none'; 
+  updateCountdown(); 
+  cdInterval=setInterval(updateCountdown,1000); 
+}
+function showMainPage(){ 
+  if(mainShown) return; 
+  mainShown=true; 
+  clearInterval(cdInterval); 
+  countdownScreen.style.display='none'; 
+  mainCard.style.display='flex'; 
+  mainCard.setAttribute('aria-hidden','false');
+  audio.play().catch(()=>{autoplayPrompt.style.display='block';});
+  startConfetti(); // Automatic confetti
+}
+function unlock(){ 
+  entryGate.style.display='none'; 
+  try{sessionStorage.setItem('hb_unlocked','1');}catch{}
+  if(isBirthdayOrAfter()){ showMainPage(); } else { showCountdown(); } 
+}
+try{ 
+  if(sessionStorage.getItem('hb_unlocked')==='1'){ 
+    entryGate.style.display='none'; 
+    if(isBirthdayOrAfter()){ showMainPage(); } else { showCountdown(); } 
+  } 
+}catch(e){}
+
+// Password logic
+pwdBtn.addEventListener('click',()=>{
+  const val=(pwdInput.value||'').trim(); 
+  if(val===CORRECT_PWD){ pwdError.style.display='none'; unlock(); } 
+  else { pwdError.style.display='block'; setTimeout(()=>pwdError.style.display='none',3000); pwdInput.value=''; pwdInput.focus(); } 
+});
+pwdInput.addEventListener('keyup',e=>{if(e.key==='Enter') pwdBtn.click();});
+setInterval(()=>{if(!mainShown && isBirthdayOrAfter()){ showMainPage(); }},1000);
+
+// Heart reveal logic
+revealBtn.addEventListener('click',()=>{
+  revealHint.textContent='I can’t wait for the day we don’t need screens or distance between us. Until then… my heart is always with you. 💞';
+  const heart = revealBtn.querySelector('.heart');
+  heart.classList.remove('bounce');
+  void heart.offsetWidth; // restart animation
+  heart.classList.add('bounce');
+});
+
+// Final wish modal
+finalWish.addEventListener('click',()=>{
+  wishModal.classList.add('open');
+  wishModal.setAttribute('aria-hidden','false');
+});
+closeModal.addEventListener('click',()=>{
+  wishModal.classList.remove('open');
+  wishModal.setAttribute('aria-hidden','true');
+});
+
+// Celebrate button burst
+modalFire.addEventListener('click',()=>{
+  burstConfetti();
+});
+
+// Audio allow button
+grantAudio.addEventListener('click',()=>{ audio.play(); autoplayPrompt.style.display='none'; });
+
+</script>
+
+</body>
+</html>
